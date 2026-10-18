@@ -50,6 +50,8 @@ export function mountShell(root, { store, views, clock: now, newId, mirror }) {
   let renderedMinute = '';
   let mainStale = false;
   let userAction = false;
+  /** Focus to move to once a view has been drawn, for a shortcut that opens one. @type {{ viewId: ViewId, selector: string } | null} */
+  let pendingFocus = null;
 
   /** @type {Store['apply']} */
   const apply = (transition, ...args) => {
@@ -97,6 +99,10 @@ export function mountShell(root, { store, views, clock: now, newId, mirror }) {
     updateLive(time);
 
     if (focusKey) /** @type {HTMLElement | null} */ (app.querySelector(`[data-focus-key="${CSS.escape(focusKey)}"]`))?.focus();
+    if (pendingFocus && pendingFocus.viewId === currentView().id) {
+      /** @type {HTMLElement | null} */ (app.querySelector(pendingFocus.selector))?.focus();
+      pendingFocus = null;
+    }
   }
 
   /** @param {Date} time */
@@ -221,6 +227,10 @@ export function mountShell(root, { store, views, clock: now, newId, mirror }) {
     const viewId = VIEW_ORDER[Number(event.key) - 1];
     if (/^[1-6]$/.test(event.key) && viewId && hasView(viewId)) {
       navigate(viewId);
+    } else if (event.key.toLowerCase() === 'n' && hasView('tasks')) {
+      event.preventDefault();
+      pendingFocus = { viewId: 'tasks', selector: '[data-add-task]' };
+      navigate('tasks');
     } else if (event.key === ' ' && !target?.closest('button, a, summary')) {
       const action = dockAction(describeDock(store.state, now()));
       if (!action?.space) return;
