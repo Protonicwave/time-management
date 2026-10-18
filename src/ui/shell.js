@@ -88,6 +88,7 @@ export function mountShell(root, { store, views, clock: now, newId, mirror }) {
   function render(force) {
     const time = now();
     const focusKey = document.activeElement instanceof HTMLElement ? document.activeElement.dataset.focusKey : undefined;
+    const focusWasInApp = app.contains(document.activeElement);
     applyTheme(store.state.settings.theme);
 
     const oldMain = app.querySelector('main');
@@ -102,6 +103,14 @@ export function mountShell(root, { store, views, clock: now, newId, mirror }) {
     if (pendingFocus && pendingFocus.viewId === currentView().id) {
       /** @type {HTMLElement | null} */ (app.querySelector(pendingFocus.selector))?.focus();
       pendingFocus = null;
+    }
+    // The control just used can vanish, as Start does once a session runs.
+    // Focus then stays in the view rather than restarting at the top of
+    // the page.
+    if (focusWasInApp && !app.contains(document.activeElement)) {
+      const heading = app.querySelector('main h1');
+      heading?.setAttribute('tabindex', '-1');
+      /** @type {HTMLElement | null} */ (heading)?.focus();
     }
   }
 

@@ -287,7 +287,7 @@ function completePanel(context, log, today) {
     h('div', { class: 'row' },
       note,
       finished && h('label', { class: 'inline-check' }, finished, 'Task finished'),
-      h('button', { class: 'btn small primary', type: 'submit' }, 'Save')));
+      h('button', { class: 'btn small primary', type: 'submit', 'data-focus-key': `save-${log.id}` }, 'Save')));
 }
 
 /**
@@ -363,7 +363,7 @@ function aside(context, today) {
     h('section', {},
       h('div', { class: 'section-title' },
         h('h2', {}, 'Deadlines'),
-        context.hasView('deadlines') && h('a', { href: '#deadlines', class: 'muted' }, 'All')),
+        context.hasView('deadlines') && h('a', { href: '#deadlines', class: 'muted', 'data-focus-key': 'deadlines-all' }, 'All')),
       deadlines.length === 0
         ? h('p', { class: 'empty' }, 'Add deadlines and the nearest three show here.')
         : h('ul', { class: 'mini-list' }, deadlines.map((deadline) => {

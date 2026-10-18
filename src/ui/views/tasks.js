@@ -101,7 +101,7 @@ function taskItem(context, row, today) {
     }),
     h('span', { class: 'title' },
       h('span', {}, task.title),
-      h('button', { class: 'btn small quiet reveal', type: 'button', 'aria-label': `Delete ${task.title}`, onclick: remove }, 'Delete')),
+      h('button', { class: 'btn small quiet reveal', type: 'button', 'aria-label': `Delete ${task.title}`, 'data-focus-key': `delete-${task.id}`, onclick: remove }, 'Delete')),
     h('span', { class: 'num', 'aria-label': `Estimate ${task.estimate}` }, String(task.estimate)),
     h('span', { class: 'num', 'aria-label': `Logged ${tenths(logged)}` }, tenths(logged)),
     likelyCell(left));
@@ -165,6 +165,6 @@ function addRow(context, group, name, first, empty) {
     h('span', { class: 'plus', 'aria-hidden': 'true' }, '+'),
     title,
     estimate,
-    h('button', { class: 'btn small', type: 'submit' }, 'Add'),
+    h('button', { class: 'btn small', type: 'submit', 'data-focus-key': `add-submit-${group.areaId}` }, 'Add'),
     error);
 }

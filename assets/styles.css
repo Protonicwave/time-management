@@ -140,6 +140,8 @@ a.btn { text-decoration: none; }
 .muted { color: var(--text-muted); }
 .faint { color: var(--text-faint); }
 :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-sm); }
+/* The heading takes focus only as a landing point when a control vanishes; it is not a control. */
+h1[tabindex="-1"]:focus { outline: none; }
 
 .swatch {
   display: inline-block; width: 8px; height: 8px; border-radius: 2px;

@@ -60,7 +60,7 @@ export function renderWeek(context) {
         h('h2', {}, 'Plan your first week'),
         h('p', {}, 'Generate this week from your allocation, then click any slot to change it.'),
         h('div', { class: 'row' },
-          h('button', { class: 'btn primary', type: 'button', onclick: () => context.apply(ensureWeek, weekShownOn(today)) }, 'Generate week'))));
+          h('button', { class: 'btn primary', type: 'button', 'data-focus-key': 'week-generate', onclick: () => context.apply(ensureWeek, weekShownOn(today)) }, 'Generate week'))));
   }
   if (!week) {
     return h('div', {},

@@ -52,7 +52,7 @@ function addForm(context) {
 
   return h('form', { class: 'deadline-form', onsubmit: add },
     title, date, area,
-    h('button', { class: 'btn primary', type: 'submit' }, 'Add'),
+    h('button', { class: 'btn primary', type: 'submit', 'data-focus-key': 'deadline-add' }, 'Add'),
     error);
 }
 
@@ -75,7 +75,7 @@ function group(context, heading, items) {
         h('span', { class: 'date' }, shortDate(deadline.date)),
         h('span', { class: 'title' },
           h('span', {}, deadline.title),
-          h('button', { class: 'btn small quiet reveal', type: 'button', 'aria-label': `Delete ${deadline.title}`, onclick: remove }, 'Delete')),
+          h('button', { class: 'btn small quiet reveal', type: 'button', 'aria-label': `Delete ${deadline.title}`, 'data-focus-key': `delete-${deadline.id}`, onclick: remove }, 'Delete')),
         h('span', { class: 'area', 'data-area': deadline.areaId }, h('span', { class: 'swatch' }), areaName(state, deadline.areaId)),
         h('span', { class: past ? 'left past' : isSoon(days) ? 'left soon' : 'left' }, daysAway(days)));
     })));

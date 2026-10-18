@@ -170,6 +170,7 @@ function fixedEventsSetting(context) {
           class: 'btn small quiet',
           type: 'button',
           'aria-label': `Remove ${event.label}`,
+          'data-focus-key': `remove-${event.dayId}-${event.slotId}`,
           onclick: () => context.apply((current) => updateSettings(current, {
             recurring: current.settings.recurring.filter((item) => item.dayId !== event.dayId || item.slotId !== event.slotId),
           })),
@@ -307,7 +308,7 @@ function dataSetting(context) {
     h('div', { class: 'controls' },
       h('div', { class: 'button-row' },
         h('button', { class: 'btn', type: 'button', 'data-focus-key': 'export', onclick: context.exportBackup }, 'Export backup'),
-        h('button', { class: 'btn', type: 'button', onclick: () => fileInput.click() }, 'Import backup'),
+        h('button', { class: 'btn', type: 'button', 'data-focus-key': 'import', onclick: () => fileInput.click() }, 'Import backup'),
         fileInput),
       h('p', { class: 'desc' }, lastExportOn ? `Last exported ${dayMonth(lastExportOn)}.` : 'Not exported yet.'),
       error));
