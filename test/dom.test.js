@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clock, compactMinutes, countdown, dayMonth, daysAway, decimal, duration, longDate, plural, shortDate, shortDayMonth, weekRange, weekday } from '../src/ui/dom.js';
+import { clock, compactMinutes, countdown, dayMonth, daysAway, decimal, duration, longDate, plural, shortDate, shortDayMonth, tenths, weekRange, weekday } from '../src/ui/dom.js';
 
 describe('formatting', () => {
   test('writes times and countdowns with two-digit fields', () => {
@@ -35,6 +35,13 @@ describe('formatting', () => {
     assert.equal(decimal(5), '5');
     assert.equal(decimal(29.5), '29.5');
     assert.equal(decimal(0.62), '0.6');
+  });
+
+  test('rounds estimates and logged sessions to tenths without a trailing zero', () => {
+    assert.equal(tenths(2.95), '3');
+    assert.equal(tenths(1.4000000000000001), '1.4');
+    assert.equal(tenths(4.25), '4.3');
+    assert.equal(tenths(0), '0');
   });
 
   test('names calendar dates in UK order', () => {

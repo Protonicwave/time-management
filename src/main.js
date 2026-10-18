@@ -7,6 +7,7 @@ import { mountRecovery } from './ui/recovery.js';
 import { mountShell } from './ui/shell.js';
 import { createStore } from './ui/store.js';
 import { renderDeadlines } from './ui/views/deadlines.js';
+import { renderReview } from './ui/views/review.js';
 import { renderSettings } from './ui/views/settings.js';
 import { renderTasks } from './ui/views/tasks.js';
 import { renderToday } from './ui/views/today.js';
@@ -53,6 +54,7 @@ function start(root, initial) {
       { id: 'week', label: 'Week', render: renderWeek },
       { id: 'tasks', label: 'Tasks', render: renderTasks },
       { id: 'deadlines', label: 'Deadlines', render: renderDeadlines },
+      { id: 'review', label: 'Review', render: renderReview },
       { id: 'settings', label: 'Settings', render: renderSettings },
     ],
   });

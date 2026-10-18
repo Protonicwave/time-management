@@ -8,7 +8,7 @@ import { SchemaError } from '../../domain/schema.js';
 import { areaName } from '../../state/day.js';
 import { estimateLearning, taskGroups } from '../../state/tasks.js';
 import { addTask, deleteTask, setTaskFinished } from '../../state/transitions.js';
-import { decimal, h, plural } from '../dom.js';
+import { h, plural, tenths } from '../dom.js';
 
 const MODULE_AREAS = /** @type {readonly AreaId[]} */ (['module-1', 'module-2', 'module-3']);
 
@@ -167,12 +167,4 @@ function addRow(context, group, name, first, empty) {
     estimate,
     h('button', { class: 'btn small', type: 'submit' }, 'Add'),
     error);
-}
-
-/**
- * @param {number} value
- * @returns {string} to one decimal place, without a trailing .0
- */
-function tenths(value) {
-  return decimal(Math.round(value * 10) / 10);
 }

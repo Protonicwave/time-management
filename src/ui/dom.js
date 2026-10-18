@@ -147,6 +147,15 @@ export function decimal(value) {
 }
 
 /**
+ * For sessions computed from minutes, where float noise must not show.
+ * @param {number} value
+ * @returns {string} as 3 or 1.4
+ */
+export function tenths(value) {
+  return decimal(Math.round(value * 10) / 10);
+}
+
+/**
  * @param {LocalDate} date
  * @returns {string} as Tuesday
  */
