@@ -15,6 +15,18 @@ export function fixedEntriesFrom(recurring) {
 }
 
 /**
+ * Sessions a week can give to area targets: every slot but the review,
+ * less fixed events that count towards no area. A linked fixed event
+ * still counts, as it is credited to its area.
+ *
+ * @param {readonly FixedEvent[]} recurring validated: one per slot, none on the review
+ * @returns {number}
+ */
+export function capacityFor(recurring) {
+  return SLOT_KEYS.length - 1 - recurring.filter((event) => event.areaId === null).length;
+}
+
+/**
  * Builds a full week: the review slot, the given fixed entries, and a
  * session in every other slot. Fixed entries linked to an area count
  * towards that area's target.

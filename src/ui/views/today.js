@@ -3,7 +3,8 @@
  * @import { DaySummary, SlotRow, SlotStatus, UnplannedRow } from '../../state/day.js'
  * @import { ViewContext } from '../shell.js'
  */
-import { REVIEW_SLOT_KEY, SLOT_KEYS, dayIdOf, daysBetween, localDateOf, mondayOf } from '../../domain/calendar.js';
+import { capacityFor } from '../../domain/allocation.js';
+import { REVIEW_SLOT_KEY, dayIdOf, daysBetween, localDateOf, mondayOf } from '../../domain/calendar.js';
 import { summariseWeek } from '../../domain/review.js';
 import {
   LAST_SLOT_HOUR,
@@ -55,7 +56,7 @@ export function renderToday(context) {
  * @param {LocalDate} today
  */
 function firstRun(context, today) {
-  const capacity = SLOT_KEYS.length - 1;
+  const capacity = capacityFor(context.state.settings.recurring);
   return h('div', {},
     pageHead('Set up your library week', 'Three things and the first week plans itself. You can change any of it later.'),
     h('div', { class: 'state-panel' },

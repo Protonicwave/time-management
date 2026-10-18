@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fixedEntriesFrom, generateWeek } from '../src/domain/allocation.js';
+import { capacityFor, fixedEntriesFrom, generateWeek } from '../src/domain/allocation.js';
 import { DAY_IDS, SLOT_KEYS, parseSlotKey } from '../src/domain/calendar.js';
 
 /** @import { Area, AreaId, FixedEntry, SlotEntry, SlotKey } from '../src/domain/types.js' */
@@ -143,5 +143,26 @@ describe('fixedEntriesFrom', () => {
       fixedEntriesFrom([{ dayId: 'tue', slotId: '13', label: 'Group meeting', areaId: 'group' }]),
       { 'tue-13': fixedEntry('Group meeting', 'group') },
     );
+  });
+});
+
+describe('capacityFor', () => {
+  test('is every slot but the review, less fixed events that count towards no area', () => {
+    assert.equal(capacityFor([]), 34);
+    assert.equal(capacityFor([
+      { dayId: 'tue', slotId: '13', label: 'Group meeting', areaId: 'group' },
+      { dayId: 'wed', slotId: '14', label: 'Careers fair', areaId: null },
+    ]), 33);
+  });
+
+  test('matches what a generated week gives to areas', () => {
+    /** @type {import('../src/domain/types.js').FixedEvent[]} */
+    const recurring = [
+      { dayId: 'mon', slotId: '09', label: 'Supervisor', areaId: 'independent' },
+      { dayId: 'thu', slotId: '15', label: 'Seminar', areaId: null },
+    ];
+    const slots = generateWeek(areasWith(), fixedEntriesFrom(recurring));
+    const counted = Object.values(slots).filter((entry) => entry.kind === 'session' || (entry.kind === 'fixed' && entry.areaId !== null)).length;
+    assert.equal(counted, capacityFor(recurring));
   });
 });

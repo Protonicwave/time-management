@@ -169,6 +169,7 @@ a.btn { text-decoration: none; }
   background: var(--surface-raised); min-width: 0;
 }
 .field:hover { border-color: var(--text-faint); }
+.field:disabled { color: var(--text-muted); border-color: var(--line); }
 .field.num { width: 64px; text-align: right; font-family: var(--font-mono); appearance: textfield; }
 .field.num::-webkit-inner-spin-button, .field.num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 kbd {
@@ -419,6 +420,7 @@ kbd {
 .setting h2 { font-size: 14px; }
 .setting .desc { font-size: 13px; color: var(--text-muted); margin-top: var(--s1); }
 .setting .controls { display: grid; gap: var(--s3); align-content: start; }
+.setting .segmented { justify-self: start; }
 .button-row { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; font-size: 14px; }
 .pair { display: flex; align-items: center; gap: var(--s3); font-size: 14px; }
 .pair label { width: 72px; color: var(--text-muted); }
@@ -426,6 +428,9 @@ kbd {
 .area-row .field { width: 100%; }
 .area-total { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); padding-top: var(--s1); }
 .area-total .mono { color: var(--text); }
+.setting .over, .area-total .over .mono { color: var(--danger-text); }
+.setting .error-detail { margin-top: 0; }
+.setting .error-detail:empty { display: none; }
 .event-row { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto auto; gap: var(--s3); align-items: center; font-size: 14px; min-height: 36px; }
 .event-row .mono { font-size: 13px; color: var(--text-muted); }
 .event-row .area { display: flex; align-items: center; gap: var(--s2); font-size: 13px; color: var(--text-muted); }
