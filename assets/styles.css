@@ -396,6 +396,7 @@ kbd {
 .setting h2 { font-size: 14px; }
 .setting .desc { font-size: 13px; color: var(--text-muted); margin-top: var(--s1); }
 .setting .controls { display: grid; gap: var(--s3); align-content: start; }
+.button-row { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; font-size: 14px; }
 .pair { display: flex; align-items: center; gap: var(--s3); font-size: 14px; }
 .pair label { width: 72px; color: var(--text-muted); }
 .area-row { display: grid; grid-template-columns: 12px minmax(0, 1fr) 64px; gap: var(--s3); align-items: center; }

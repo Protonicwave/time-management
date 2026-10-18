@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { IDLE, advance, startFocus, stop } from '../src/domain/timer.js';
+import { IDLE, advance, readTimer, startFocus, stop } from '../src/domain/timer.js';
 
 /** @import { SessionContext, TimerState } from '../src/domain/types.js' */
 
@@ -92,5 +92,30 @@ describe('timer', () => {
     const focus = startFocus(IDLE, context, start);
     assert.deepEqual(advance(focus, at(-30)), { timer: focus, finished: null });
     assert.deepEqual(stop(focus, at(-30)), { timer: IDLE, finished: null });
+  });
+});
+
+describe('reading the timer', () => {
+  test('counts down focus and reports progress', () => {
+    const focus = startFocus(IDLE, context, start);
+    assert.deepEqual(readTimer(focus, start), { remainingSeconds: 3000, progress: 0 });
+    assert.deepEqual(readTimer(focus, new Date(start.getTime() + (32 * 60 + 18) * 1000)), { remainingSeconds: 17 * 60 + 42, progress: 1938 / 3000 });
+  });
+
+  test('rounds part seconds up so the countdown never shows zero early', () => {
+    assert.equal(readTimer(startFocus(IDLE, context, start), new Date(start.getTime() + 500))?.remainingSeconds, 3000);
+  });
+
+  test('clamps to the ends when the clock is outside the block', () => {
+    const focus = startFocus(IDLE, context, start);
+    assert.deepEqual(readTimer(focus, at(70)), { remainingSeconds: 0, progress: 1 });
+    assert.deepEqual(readTimer(focus, at(-1)), { remainingSeconds: 3000, progress: 0 });
+  });
+
+  test('uses the break length during a break and nothing when idle', () => {
+    /** @type {TimerState} */
+    const onBreak = { phase: 'break', startedAt: start.toISOString(), breakMinutes: 10 };
+    assert.deepEqual(readTimer(onBreak, at(4)), { remainingSeconds: 360, progress: 0.4 });
+    assert.equal(readTimer(IDLE, start), null);
   });
 });

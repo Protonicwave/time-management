@@ -82,6 +82,21 @@ export function stop(timer, now) {
 }
 
 /**
+ * What the countdown shows. Derived from the start time on every read, so
+ * a throttled or sleeping tab shows the right time as soon as it wakes.
+ *
+ * @param {TimerState} timer
+ * @param {Date} now
+ * @returns {{ remainingSeconds: number, progress: number } | null} progress from 0 to 1; null when idle
+ */
+export function readTimer(timer, now) {
+  if (timer.phase === 'idle') return null;
+  const total = (timer.phase === 'focus' ? timer.context.focusMinutes : timer.breakMinutes) * MILLISECONDS_PER_MINUTE;
+  const elapsed = Math.min(total, Math.max(0, now.getTime() - Date.parse(timer.startedAt)));
+  return { remainingSeconds: Math.ceil((total - elapsed) / 1000), progress: total === 0 ? 1 : elapsed / total };
+}
+
+/**
  * @param {IsoInstant} startedAt
  * @param {number} minutes
  * @param {Date} now

@@ -78,16 +78,17 @@ export async function readBackupFile(file) {
  * @property {() => string | null} fileName
  * @property {() => string | null} failure the message of the last failed write
  * @property {() => Promise<void>} init
- * @property {(state: AppState) => Promise<void>} choose
- * @property {(state: AppState) => Promise<void>} reconnect
- * @property {(state: AppState) => void} schedule
+ * @property {() => Promise<void>} choose
+ * @property {() => Promise<void>} reconnect
+ * @property {() => void} schedule writes the current state shortly, once changes pause
  */
 
 /**
+ * @param {() => AppState} currentState read at write time, so a delayed write never saves a stale copy
  * @param {() => void} onStatusChange
  * @returns {Mirror}
  */
-export function createMirror(onStatusChange) {
+export function createMirror(currentState, onStatusChange) {
   const picker = /** @type {{ showSaveFilePicker?: SaveFilePicker }} */ (/** @type {unknown} */ (window)).showSaveFilePicker;
   /** @type {MirrorStatus} */
   let status = picker ? 'off' : 'unsupported';
@@ -105,12 +106,11 @@ export function createMirror(onStatusChange) {
     onStatusChange();
   }
 
-  /** @param {AppState} state */
-  async function write(state) {
+  async function write() {
     if (!handle) return;
     try {
       const writable = await handle.createWritable();
-      await writable.write(serialise(state));
+      await writable.write(serialise(currentState()));
       await writable.close();
       failure = null;
       setStatus('on');
@@ -141,7 +141,7 @@ export function createMirror(onStatusChange) {
       setStatus((await handle.queryPermission({ mode: 'readwrite' })) === 'granted' ? 'on' : 'reconnect');
     },
 
-    async choose(state) {
+    async choose() {
       if (!picker) return;
       try {
         handle = await picker({
@@ -154,19 +154,19 @@ export function createMirror(onStatusChange) {
         throw error;
       }
       await storeHandle(handle);
-      await write(state);
+      await write();
     },
 
-    async reconnect(state) {
+    async reconnect() {
       if (!handle) return;
       if ((await handle.requestPermission({ mode: 'readwrite' })) !== 'granted') return;
-      await write(state);
+      await write();
     },
 
-    schedule(state) {
+    schedule() {
       if (status !== 'on') return;
       clearTimeout(timer);
-      timer = setTimeout(() => void write(state), MIRROR_DELAY_MS);
+      timer = setTimeout(() => void write(), MIRROR_DELAY_MS);
     },
   };
 }
