@@ -1,0 +1,20 @@
+{
+  "name": "logbook",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline study planner for library days: weekly plan, focus timer, session log and weekly review.",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "esbuild src/main.js --bundle --format=iife --target=es2022 --outfile=dist/logbook.js",
+    "dev": "esbuild src/main.js --bundle --format=iife --target=es2022 --outfile=dist/logbook.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
+}
