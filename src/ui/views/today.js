@@ -21,13 +21,13 @@ import {
   unplannedRows,
   weekShownOn,
 } from '../../state/day.js';
+import { isSoon } from '../../state/deadlines.js';
 import { editSlot, ensureWeek, noteLog, setTaskFinished, startSession } from '../../state/transitions.js';
 import { clock, clockOf, compactMinutes, decimal, duration, h, icon, longDate, plural, shortDate, weekday } from '../dom.js';
 import { openUnplannedDialog } from '../unplanned-dialog.js';
 
 const LUNCH_HOUR = 12;
 const DEADLINES_SHOWN = 3;
-const SOON_DAYS = 7;
 
 // Interface memory for this page load only. Losing it on reload at worst
 // shows a panel again, which is harmless, so it does not belong in the
@@ -369,7 +369,7 @@ function aside(context, today) {
           const days = daysBetween(today, deadline.date);
           return h('li', {},
             h('span', {}, deadline.title),
-            h('span', { class: days <= SOON_DAYS ? 'days-left soon' : 'days-left' }, `${days} d`),
+            h('span', { class: isSoon(days) ? 'days-left soon' : 'days-left' }, `${days} d`),
             h('span', { class: 'sub', 'data-area': deadline.areaId },
               h('span', { class: 'swatch' }), `${areaName(state, deadline.areaId)}, ${shortDate(deadline.date)}`));
         }))),

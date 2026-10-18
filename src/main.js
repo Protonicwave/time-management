@@ -6,6 +6,7 @@ import { STATE_KEY, loadState, saveState } from './storage/local-store.js';
 import { mountRecovery } from './ui/recovery.js';
 import { mountShell } from './ui/shell.js';
 import { createStore } from './ui/store.js';
+import { renderDeadlines } from './ui/views/deadlines.js';
 import { renderSettings } from './ui/views/settings.js';
 import { renderTasks } from './ui/views/tasks.js';
 import { renderToday } from './ui/views/today.js';
@@ -51,6 +52,7 @@ function start(root, initial) {
       { id: 'today', label: 'Today', render: renderToday },
       { id: 'week', label: 'Week', render: renderWeek },
       { id: 'tasks', label: 'Tasks', render: renderTasks },
+      { id: 'deadlines', label: 'Deadlines', render: renderDeadlines },
       { id: 'settings', label: 'Settings', render: renderSettings },
     ],
   });

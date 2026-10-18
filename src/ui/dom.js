@@ -80,6 +80,16 @@ export function compactMinutes(minutes) {
 }
 
 /**
+ * For mono columns.
+ * @param {number} days from today, negative once past
+ * @returns {string} as today, 7 d or 4 d ago
+ */
+export function daysAway(days) {
+  if (days === 0) return 'today';
+  return days > 0 ? `${days} d` : `${-days} d ago`;
+}
+
+/**
  * For running text.
  * @param {number} minutes
  * @returns {string} as 5 hours 41 minutes

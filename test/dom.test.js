@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clock, compactMinutes, countdown, dayMonth, decimal, duration, longDate, plural, shortDate, shortDayMonth, weekRange, weekday } from '../src/ui/dom.js';
+import { clock, compactMinutes, countdown, dayMonth, daysAway, decimal, duration, longDate, plural, shortDate, shortDayMonth, weekRange, weekday } from '../src/ui/dom.js';
 
 describe('formatting', () => {
   test('writes times and countdowns with two-digit fields', () => {
@@ -18,6 +18,12 @@ describe('formatting', () => {
     assert.equal(duration(1), '1 minute');
     assert.equal(duration(0), '0 minutes');
     assert.equal(compactMinutes(50), '50 min');
+  });
+
+  test('writes days to a date compactly for columns', () => {
+    assert.equal(daysAway(0), 'today');
+    assert.equal(daysAway(7), '7 d');
+    assert.equal(daysAway(-4), '4 d ago');
   });
 
   test('pluralises counts', () => {
