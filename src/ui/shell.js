@@ -9,7 +9,7 @@ import { readTimer } from '../domain/timer.js';
 import { describeDock, entryTitle, isFirstRun, weekShownOn } from '../state/day.js';
 import { advanceTimer, ensureWeek, markExported, startSession, stopSession } from '../state/transitions.js';
 import { backupFileName, downloadText, serialise } from '../storage/backup-file.js';
-import { clock, countdown, dayMonth, h, weekday } from './dom.js';
+import { clock, countdown, h, shortDayMonth, weekday } from './dom.js';
 import { openUnplannedDialog } from './unplanned-dialog.js';
 
 /** @typedef {'today' | 'week' | 'tasks' | 'deadlines' | 'review' | 'settings'} ViewId */
@@ -113,7 +113,7 @@ export function mountShell(root, { store, views, clock: now, newId, mirror }) {
   function renderSidebar(time) {
     const view = currentView();
     return h('aside', { class: 'sidebar' },
-      h('div', { class: 'brand' }, h('b', {}, 'Logbook'), h('span', {}, `Week of ${dayMonth(weekShownOn(localDateOf(time)))}`)),
+      h('div', { class: 'brand' }, h('b', {}, 'Logbook'), h('span', {}, `Week of ${shortDayMonth(weekShownOn(localDateOf(time)))}`)),
       h('nav', { class: 'nav', 'aria-label': 'Views' }, views.map((item) => h('a', {
         href: `#${item.id}`,
         'aria-current': item === view ? 'page' : null,

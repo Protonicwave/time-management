@@ -212,6 +212,7 @@ kbd {
 .dock-actions { display: flex; align-items: center; gap: var(--s2); }
 .dock.idle .dock-label { color: var(--text-muted); }
 .dock.idle .dock-label i { background: var(--text-faint); }
+.dock.idle .dock-bar span { background: var(--text-faint); }
 
 .main { min-width: 0; }
 .view { max-width: 1040px; padding: var(--s6) var(--s7) 96px; }

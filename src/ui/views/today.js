@@ -256,7 +256,7 @@ function slotMeta(context, row) {
   if (row.key === REVIEW_SLOT_KEY) {
     return h('div', { class: 'slot-meta' }, context.hasView('review') && button('Open review', () => context.navigate('review'), 'btn small reveal'));
   }
-  if (row.entry.kind === 'fixed') return h('div', { class: 'slot-meta faint' }, session ? 'Counts as 1 session' : 'Not counted', start);
+  if (row.entry.kind === 'fixed' && !session) return h('div', { class: 'slot-meta faint' }, 'Not counted');
   return h('div', { class: 'slot-meta' }, start);
 }
 

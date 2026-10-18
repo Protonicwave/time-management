@@ -119,6 +119,15 @@ export function shortDate(date) {
 }
 
 /**
+ * @param {LocalDate} date
+ * @returns {string} as 19 Oct
+ */
+export function shortDayMonth(date) {
+  const parsed = parse(date);
+  return `${parsed.getDate()} ${MONTHS[parsed.getMonth()]?.slice(0, 3)}`;
+}
+
+/**
  * Logged sessions are fractional when a session was stopped early.
  * @param {number} value
  * @returns {string} as 5 or 29.5
