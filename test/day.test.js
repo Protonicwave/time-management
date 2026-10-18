@@ -1,8 +1,8 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultState } from '../src/domain/schema.js';
-import { describeDock, entryTitle, isFirstRun, nextSlot, slotRows, weekShownOn } from '../src/state/day.js';
-import { addTask, advanceTimer, deleteTask, editSlot, ensureWeek, startSession, stopSession, updateSettings } from '../src/state/transitions.js';
+import { describeDock, entryTitle, isFirstRun, nearestDeadlines, nextSlot, sessionsToGo, slotRows, weekShownOn } from '../src/state/day.js';
+import { addDeadline, addTask, advanceTimer, deleteTask, editSlot, ensureWeek, startSession, stopSession, updateSettings } from '../src/state/transitions.js';
 
 /** @import { AppState } from '../src/domain/types.js' */
 
@@ -165,5 +165,26 @@ describe('entry titles', () => {
     assert.equal(entryTitle(state, { kind: 'session', areaId: 'buffer', taskId: null }), 'Buffer');
     assert.equal(entryTitle(state, { kind: 'review' }), 'Weekly review');
     assert.equal(entryTitle(deleteTask(state, 't1'), { kind: 'session', areaId: 'independent', taskId: 't1' }), 'Deleted task');
+  });
+});
+
+describe('sessions to go', () => {
+  test('counts loggable slots without a log, including the live one', () => {
+    let state = planned();
+    const [nine, ten] = slotRows(state, tuesday).map((row) => /** @type {any} */ (row.session));
+    assert.equal(sessionsToGo(slotRows(state, tuesday)), 6);
+    state = startSession(work(state, nine, at(9), 50, 'l1'), ten, at(10));
+    assert.equal(sessionsToGo(slotRows(state, tuesday)), 5);
+  });
+});
+
+describe('nearest deadlines', () => {
+  test('lists the next few from today onwards, soonest first', () => {
+    let state = defaultState();
+    for (const [id, date] of [['a', '2026-11-06'], ['b', '2026-10-19'], ['c', '2026-10-20'], ['d', '2026-10-30'], ['e', '2026-10-27']]) {
+      state = addDeadline(state, { id, title: id, date, areaId: 'group' });
+    }
+    assert.deepEqual(nearestDeadlines(state.deadlines, tuesday, 3).map((deadline) => deadline.id), ['c', 'e', 'd']);
+    assert.deepEqual(nearestDeadlines([], tuesday, 3), []);
   });
 });

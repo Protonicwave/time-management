@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clock, compactMinutes, countdown, dayMonth, duration, longDate, plural, weekday } from '../src/ui/dom.js';
+import { clock, compactMinutes, countdown, dayMonth, decimal, duration, longDate, plural, shortDate, weekday } from '../src/ui/dom.js';
 
 describe('formatting', () => {
   test('writes times and countdowns with two-digit fields', () => {
@@ -25,7 +25,14 @@ describe('formatting', () => {
     assert.equal(plural(0, 'session'), '0 sessions');
   });
 
+  test('shows whole session counts plainly and fractions to one place', () => {
+    assert.equal(decimal(5), '5');
+    assert.equal(decimal(29.5), '29.5');
+    assert.equal(decimal(0.62), '0.6');
+  });
+
   test('names calendar dates in UK order', () => {
+    assert.equal(shortDate('2026-10-27'), 'Tue 27 Oct');
     assert.equal(longDate('2026-10-20'), 'Tuesday 20 October');
     assert.equal(weekday('2026-10-24'), 'Saturday');
     assert.equal(dayMonth('2026-03-29'), '29 March');

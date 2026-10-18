@@ -7,6 +7,7 @@ import {
   addDays,
   dateOfDay,
   dayIdOf,
+  daysBetween,
   isLocalDate,
   isSlotKey,
   localDateOf,
@@ -47,6 +48,14 @@ describe('dates', () => {
     assert.equal(addDays('2026-10-24', 2), '2026-10-26');
     assert.equal(mondayOf('2026-03-29'), '2026-03-23');
     assert.equal(mondayOf('2026-10-26'), '2026-10-26');
+  });
+
+  test('counts calendar days between dates, across daylight-saving changes', () => {
+    assert.equal(daysBetween('2026-10-20', '2026-10-27'), 7);
+    assert.equal(daysBetween('2026-10-20', '2026-10-16'), -4);
+    assert.equal(daysBetween('2026-10-24', '2026-10-26'), 2);
+    assert.equal(daysBetween('2026-03-28', '2026-03-30'), 2);
+    assert.equal(daysBetween('2026-10-20', '2026-10-20'), 0);
   });
 
   test('reads the local date of an instant at either end of the day', () => {

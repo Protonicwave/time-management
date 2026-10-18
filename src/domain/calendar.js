@@ -68,6 +68,15 @@ export function addDays(date, days) {
 }
 
 /**
+ * @param {LocalDate} from
+ * @param {LocalDate} to
+ * @returns {number} negative when to is earlier
+ */
+export function daysBetween(from, to) {
+  return Math.round((toUtcMilliseconds(to) - toUtcMilliseconds(from)) / MILLISECONDS_PER_DAY);
+}
+
+/**
  * @param {LocalDate} date
  * @returns {LocalDate}
  */

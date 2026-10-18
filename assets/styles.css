@@ -226,6 +226,7 @@ kbd {
 .head-actions { display: flex; gap: var(--s2); align-items: center; }
 .section-title { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s3); }
 .section-title .muted { font-size: 13px; }
+.empty { font-size: 14px; color: var(--text-muted); max-width: 60ch; }
 
 /* Today */
 .today { display: grid; grid-template-columns: minmax(0, 1fr) 272px; gap: var(--s7); align-items: start; }
@@ -274,7 +275,7 @@ kbd {
 .mini-list li { display: grid; grid-template-columns: 1fr auto; gap: var(--s1) var(--s3); font-size: 14px; }
 .mini-list .sub { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--s2); font-size: 12px; color: var(--text-muted); margin-top: -2px; }
 .days-left { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
-.days-left.soon { color: var(--live-text); }
+.days-left.soon { color: var(--text); font-weight: 500; }
 
 .meters { display: grid; gap: var(--s3); }
 .meter { display: grid; grid-template-columns: 1fr auto; gap: 6px var(--s3); font-size: 13px; }
@@ -362,7 +363,7 @@ kbd {
 .dl .date { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
 .dl .area { display: flex; align-items: center; gap: var(--s2); font-size: 13px; color: var(--text-muted); }
 .dl .left { font-family: var(--font-mono); font-size: 13px; text-align: right; color: var(--text-muted); }
-.dl .left.soon { color: var(--live-text); }
+.dl .left.soon { color: var(--text); font-weight: 500; }
 .dl .left.past { color: var(--text-faint); }
 .dl li.past .title { color: var(--text-muted); }
 

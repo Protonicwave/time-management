@@ -111,6 +111,24 @@ export function longDate(date) {
 
 /**
  * @param {LocalDate} date
+ * @returns {string} as Tue 27 Oct
+ */
+export function shortDate(date) {
+  const parsed = parse(date);
+  return `${WEEKDAYS[parsed.getDay()]?.slice(0, 3)} ${parsed.getDate()} ${MONTHS[parsed.getMonth()]?.slice(0, 3)}`;
+}
+
+/**
+ * Logged sessions are fractional when a session was stopped early.
+ * @param {number} value
+ * @returns {string} as 5 or 29.5
+ */
+export function decimal(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+/**
+ * @param {LocalDate} date
  * @returns {string} as Tuesday
  */
 export function weekday(date) {

@@ -1,4 +1,4 @@
-/** @import { AppState, AreaId, LocalDate, SessionLog, SlotEntry, SlotKey, Week } from '../domain/types.js' */
+/** @import { AppState, AreaId, Deadline, LocalDate, SessionLog, SlotEntry, SlotKey, Week } from '../domain/types.js' */
 import { SLOT_IDS, dayIdOf, localDateOf, mondayOf, nextLibraryDay, slotKey } from '../domain/calendar.js';
 import { ensureWeek } from './transitions.js';
 
@@ -86,6 +86,28 @@ export function slotRows(state, date) {
 export function nextSlot(rows, now) {
   const minute = now.getHours() * 60 + now.getMinutes();
   return rows.find((row) => row.session !== null && row.status.status === 'open' && minute < (row.hour + 1) * 60) ?? null;
+}
+
+/**
+ * Slots that can still be logged today, the running one included.
+ * @param {readonly SlotRow[]} rows
+ * @returns {number}
+ */
+export function sessionsToGo(rows) {
+  return rows.filter((row) => row.session !== null && row.status.status !== 'logged').length;
+}
+
+/**
+ * @param {readonly Deadline[]} deadlines
+ * @param {LocalDate} today
+ * @param {number} count
+ * @returns {Deadline[]} due today or later, soonest first
+ */
+export function nearestDeadlines(deadlines, today, count) {
+  return deadlines
+    .filter((deadline) => deadline.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, count);
 }
 
 /**
