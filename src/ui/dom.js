@@ -154,6 +154,19 @@ export function dayMonth(date) {
 }
 
 /**
+ * @param {LocalDate} monday
+ * @returns {string} as 19 to 23 October, or 28 September to 2 October
+ */
+export function weekRange(monday) {
+  const start = parse(monday);
+  const end = parse(monday);
+  end.setDate(end.getDate() + 4);
+  return start.getMonth() === end.getMonth()
+    ? `${start.getDate()} to ${end.getDate()} ${MONTHS[end.getMonth()]}`
+    : `${start.getDate()} ${MONTHS[start.getMonth()]} to ${end.getDate()} ${MONTHS[end.getMonth()]}`;
+}
+
+/**
  * @param {LocalDate} date
  * @returns {Date} local midnight
  */

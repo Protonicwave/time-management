@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clock, compactMinutes, countdown, dayMonth, decimal, duration, longDate, plural, shortDate, shortDayMonth, weekday } from '../src/ui/dom.js';
+import { clock, compactMinutes, countdown, dayMonth, decimal, duration, longDate, plural, shortDate, shortDayMonth, weekRange, weekday } from '../src/ui/dom.js';
 
 describe('formatting', () => {
   test('writes times and countdowns with two-digit fields', () => {
@@ -37,5 +37,11 @@ describe('formatting', () => {
     assert.equal(longDate('2026-10-20'), 'Tuesday 20 October');
     assert.equal(weekday('2026-10-24'), 'Saturday');
     assert.equal(dayMonth('2026-03-29'), '29 March');
+  });
+
+  test('names a library week by its Monday and Friday', () => {
+    assert.equal(weekRange('2026-10-19'), '19 to 23 October');
+    assert.equal(weekRange('2026-09-28'), '28 September to 2 October');
+    assert.equal(weekRange('2026-12-28'), '28 December to 1 January');
   });
 });

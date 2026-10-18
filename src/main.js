@@ -8,6 +8,7 @@ import { mountShell } from './ui/shell.js';
 import { createStore } from './ui/store.js';
 import { renderSettings } from './ui/views/settings.js';
 import { renderToday } from './ui/views/today.js';
+import { renderWeek } from './ui/views/week.js';
 
 // The one place that touches the real clock, id source and storage.
 const clock = () => new Date();
@@ -47,6 +48,7 @@ function start(root, initial) {
     mirror,
     views: [
       { id: 'today', label: 'Today', render: renderToday },
+      { id: 'week', label: 'Week', render: renderWeek },
       { id: 'settings', label: 'Settings', render: renderSettings },
     ],
   });
