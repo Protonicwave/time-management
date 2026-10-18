@@ -1,8 +1,22 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultState } from '../src/domain/schema.js';
-import { describeDock, entryTitle, isFirstRun, nearestDeadlines, nextSlot, sessionsToGo, slotRows, weekShownOn } from '../src/state/day.js';
-import { addDeadline, addTask, advanceTimer, deleteTask, editSlot, ensureWeek, startSession, stopSession, updateSettings } from '../src/state/transitions.js';
+import {
+  describeDock,
+  entryTitle,
+  firstSessionOfNextDay,
+  isClosingTime,
+  isFirstRun,
+  latestLog,
+  nearestDeadlines,
+  nextSlot,
+  sessionsToGo,
+  slotRows,
+  summariseDay,
+  unplannedRows,
+  weekShownOn,
+} from '../src/state/day.js';
+import { addDeadline, addTask, advanceTimer, deleteTask, editSlot, ensureWeek, setTaskFinished, startSession, stopSession, updateSettings } from '../src/state/transitions.js';
 
 /** @import { AppState } from '../src/domain/types.js' */
 
@@ -105,14 +119,20 @@ describe('slot rows', () => {
 });
 
 describe('next slot', () => {
-  test('is the first open slot that has not ended, skipping unlinked fixed events', () => {
+  test('is the first open slot whose focus time has not passed, skipping unlinked fixed events', () => {
     let state = planned();
-    assert.equal(nextSlot(slotRows(state, tuesday), at(8, 30))?.key, 'tue-09');
-    assert.equal(nextSlot(slotRows(state, tuesday), at(10, 59))?.key, 'tue-10');
+    assert.equal(nextSlot(slotRows(state, tuesday), at(8, 30), 50)?.key, 'tue-09');
+    assert.equal(nextSlot(slotRows(state, tuesday), at(10, 49), 50)?.key, 'tue-10');
+    assert.equal(nextSlot(slotRows(state, tuesday), at(10, 50), 50)?.key, 'tue-11');
     state = work(state, /** @type {any} */ (slotRows(state, tuesday)[1]?.session), at(10), 50, 'l1');
-    assert.equal(nextSlot(slotRows(state, tuesday), at(10, 59))?.key, 'tue-11');
-    assert.equal(nextSlot(slotRows(state, tuesday), at(14, 10))?.key, 'tue-15');
-    assert.equal(nextSlot(slotRows(state, tuesday), at(17)), null);
+    assert.equal(nextSlot(slotRows(state, tuesday), at(10, 30), 50)?.key, 'tue-11');
+    assert.equal(nextSlot(slotRows(state, tuesday), at(14, 10), 50)?.key, 'tue-15');
+  });
+
+  test('offers nothing once the last slot\'s focus time has passed', () => {
+    assert.equal(nextSlot(slotRows(planned(), tuesday), at(16, 49), 50)?.key, 'tue-16');
+    assert.equal(nextSlot(slotRows(planned(), tuesday), at(16, 52), 50), null);
+    assert.equal(nextSlot(slotRows(planned(), tuesday), at(16, 30), 25), null);
   });
 });
 
@@ -186,5 +206,53 @@ describe('nearest deadlines', () => {
     }
     assert.deepEqual(nearestDeadlines(state.deadlines, tuesday, 3).map((deadline) => deadline.id), ['c', 'e', 'd']);
     assert.deepEqual(nearestDeadlines([], tuesday, 3), []);
+  });
+});
+
+describe('unplanned sessions', () => {
+  test('lists the day\'s unplanned logs and a running one by start time', () => {
+    let state = planned();
+    const group = { slotKey: null, areaId: /** @type {const} */ ('group'), taskId: null };
+    state = work(state, group, at(17, 30), 50, 'late');
+    state = work(state, group, at(8, 0), 20, 'early');
+    state = work(state, group, at(8, 0, 19), 50, 'monday');
+    state = startSession(state, { ...group, areaId: 'careers' }, at(18, 30));
+    const rows = unplannedRows(state, tuesday);
+    assert.deepEqual(rows.map((row) => [row.log?.id ?? 'running', row.status.status]), [['early', 'logged'], ['late', 'logged'], ['running', 'live']]);
+    assert.deepEqual(rows[0]?.status, { status: 'logged', minutes: 20, completed: false });
+    assert.equal(rows[2]?.areaId, 'careers');
+  });
+});
+
+describe('closing the day', () => {
+  test('finds the latest log of the day', () => {
+    let state = planned();
+    const [nine, ten] = slotRows(state, tuesday).map((row) => /** @type {any} */ (row.session));
+    assert.equal(latestLog(state.logs, tuesday), null);
+    state = work(work(state, ten, at(10), 50, 'second'), nine, at(9), 50, 'first');
+    assert.equal(latestLog(state.logs, tuesday)?.id, 'second');
+  });
+
+  test('is closing time once the last slot\'s focus has ended', () => {
+    assert.equal(isClosingTime(at(16, 49), 50), false);
+    assert.equal(isClosingTime(at(16, 50), 50), true);
+    assert.equal(isClosingTime(at(16, 30), 25), true);
+  });
+
+  test('summarises the day: sessions against planned, stops, finished tasks and focus time', () => {
+    let state = planned();
+    const [nine, ten] = slotRows(state, tuesday).map((row) => /** @type {any} */ (row.session));
+    state = work(work(state, nine, at(9), 50, 'l1'), ten, at(10), 31, 'l2');
+    state = setTaskFinished(state, 't1', tuesday);
+    assert.deepEqual(summariseDay(state, tuesday), { logged: 2, planned: 6, stopped: 1, finished: 1, focusMinutes: 81 });
+  });
+
+  test('picks the first session of the next library day, past fixed events', () => {
+    let state = planned();
+    state = editSlot(state, monday, 'wed-09', { kind: 'fixed', label: 'Lab induction', areaId: null });
+    const wednesday = firstSessionOfNextDay(state, tuesday);
+    assert.deepEqual([wednesday.date, wednesday.row?.key], ['2026-10-21', 'wed-10']);
+    const monday26 = firstSessionOfNextDay(state, '2026-10-23');
+    assert.deepEqual([monday26.date, monday26.row?.key], ['2026-10-26', 'mon-09']);
   });
 });

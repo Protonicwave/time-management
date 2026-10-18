@@ -288,6 +288,8 @@ kbd {
 .state-panel h2 { font-size: 16px; }
 .state-panel p { color: var(--text-muted); margin-top: var(--s1); max-width: 60ch; }
 .state-panel .row { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; margin-top: var(--s4); }
+.state-panel .row .muted { font-size: 14px; }
+.state-panel .row .field { flex: 1 1 240px; }
 .summary-line { display: flex; gap: var(--s5); flex-wrap: wrap; margin-top: var(--s4); font-size: 14px; }
 .summary-line div { display: grid; }
 .summary-line .mono { font-size: 18px; }

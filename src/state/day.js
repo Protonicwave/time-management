@@ -1,4 +1,4 @@
-/** @import { AppState, AreaId, Deadline, LocalDate, SessionLog, SlotEntry, SlotKey, Week } from '../domain/types.js' */
+/** @import { AppState, AreaId, Deadline, IsoInstant, LocalDate, SessionLog, SlotEntry, SlotKey, Week } from '../domain/types.js' */
 import { SLOT_IDS, dayIdOf, localDateOf, mondayOf, nextLibraryDay, slotKey } from '../domain/calendar.js';
 import { ensureWeek } from './transitions.js';
 
@@ -16,6 +16,19 @@ import { ensureWeek } from './transitions.js';
  * @property {Session | null} session what the timer would log here; null for the review and unlinked fixed events
  * @property {SlotStatus} status
  */
+
+/**
+ * @typedef {object} UnplannedRow
+ * @property {IsoInstant} startedAt
+ * @property {AreaId} areaId
+ * @property {string | null} taskId
+ * @property {SlotStatus} status
+ * @property {SessionLog | null} log null while running
+ */
+
+/** @typedef {{ logged: number, planned: number, stopped: number, finished: number, focusMinutes: number }} DaySummary */
+
+export const LAST_SLOT_HOUR = Number(SLOT_IDS[SLOT_IDS.length - 1]);
 
 /**
  * @typedef {{ kind: 'setup' }
@@ -76,16 +89,97 @@ export function slotRows(state, date) {
 }
 
 /**
- * The slot to start next: the first open slot that has not yet ended by
- * the clock, so a slot can still be started late within its hour.
+ * The slot to start next: the first open slot whose focus time has not
+ * passed, so a slot can be started late but not once its focus would
+ * have ended, which would run the last one past closing.
  *
  * @param {readonly SlotRow[]} rows
  * @param {Date} now
+ * @param {number} focusMinutes
  * @returns {SlotRow | null}
  */
-export function nextSlot(rows, now) {
+export function nextSlot(rows, now, focusMinutes) {
   const minute = now.getHours() * 60 + now.getMinutes();
-  return rows.find((row) => row.session !== null && row.status.status === 'open' && minute < (row.hour + 1) * 60) ?? null;
+  return rows.find((row) => row.session !== null && row.status.status === 'open' && minute < row.hour * 60 + focusMinutes) ?? null;
+}
+
+/**
+ * Sessions started outside the plan on a day, logged or running, by
+ * start time. Each is its own row, as there is no slot to group them by.
+ *
+ * @param {AppState} state
+ * @param {LocalDate} date
+ * @returns {UnplannedRow[]}
+ */
+export function unplannedRows(state, date) {
+  /** @type {UnplannedRow[]} */
+  const rows = logsOn(state.logs, date)
+    .filter((log) => log.slotKey === null)
+    .map((log) => ({
+      startedAt: log.startedAt,
+      areaId: log.areaId,
+      taskId: log.taskId,
+      status: { status: 'logged', minutes: log.minutes, completed: log.outcome === 'completed' },
+      log,
+    }));
+  const { timer } = state;
+  if (timer.phase === 'focus' && timer.context.slotKey === null && timer.context.date === date) {
+    rows.push({ startedAt: timer.startedAt, areaId: timer.context.areaId, taskId: timer.context.taskId, status: { status: 'live' }, log: null });
+  }
+  return rows.sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+}
+
+/**
+ * The session that has just finished, if the day has one.
+ * @param {readonly SessionLog[]} logs
+ * @param {LocalDate} date
+ * @returns {SessionLog | null}
+ */
+export function latestLog(logs, date) {
+  /** @type {SessionLog | null} */
+  let latest = null;
+  for (const log of logsOn(logs, date)) {
+    if (latest === null || log.startedAt > latest.startedAt) latest = log;
+  }
+  return latest;
+}
+
+/**
+ * @param {Date} now
+ * @param {number} focusMinutes
+ * @returns {boolean} true once focus in the last slot of the day would have ended
+ */
+export function isClosingTime(now, focusMinutes) {
+  return now.getHours() * 60 + now.getMinutes() >= LAST_SLOT_HOUR * 60 + focusMinutes;
+}
+
+/**
+ * @param {AppState} state
+ * @param {LocalDate} date
+ * @returns {DaySummary}
+ */
+export function summariseDay(state, date) {
+  const logs = logsOn(state.logs, date);
+  return {
+    logged: logs.length,
+    planned: slotRows(state, date).filter((row) => row.session !== null).length,
+    stopped: logs.filter((log) => log.outcome === 'interrupted').length,
+    finished: state.tasks.filter((task) => task.finishedOn === date).length,
+    focusMinutes: logs.reduce((sum, log) => sum + log.minutes, 0),
+  };
+}
+
+/**
+ * The slot whose task is chosen when closing the day: the first session
+ * of the next library day, since only a session takes a task.
+ *
+ * @param {AppState} state
+ * @param {LocalDate} date
+ * @returns {{ date: LocalDate, row: SlotRow | null }}
+ */
+export function firstSessionOfNextDay(state, date) {
+  const next = nextLibraryDay(date);
+  return { date: next, row: slotRows(state, next).find((row) => row.entry.kind === 'session') ?? null };
 }
 
 /**
@@ -128,7 +222,7 @@ export function describeDock(state, now) {
   }
 
   const today = localDateOf(now);
-  const next = nextSlot(slotRows(state, today), now);
+  const next = nextSlot(slotRows(state, today), now, state.settings.focusMinutes);
   if (timer.phase === 'break') return { kind: 'break', next };
   if (isFirstRun(state)) return { kind: 'setup' };
   if (next?.session) {

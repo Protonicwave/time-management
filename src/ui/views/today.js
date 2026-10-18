@@ -1,17 +1,43 @@
 /**
- * @import { AppState, LocalDate } from '../../domain/types.js'
- * @import { SlotRow } from '../../state/day.js'
+ * @import { AppState, LocalDate, SessionLog } from '../../domain/types.js'
+ * @import { DaySummary, SlotRow, SlotStatus, UnplannedRow } from '../../state/day.js'
  * @import { ViewContext } from '../shell.js'
  */
 import { REVIEW_SLOT_KEY, SLOT_KEYS, dayIdOf, daysBetween, localDateOf, mondayOf } from '../../domain/calendar.js';
 import { summariseWeek } from '../../domain/review.js';
-import { areaName, entryTitle, isFirstRun, logsOn, nearestDeadlines, sessionsToGo, slotRows, weekShownOn } from '../../state/day.js';
-import { ensureWeek, startSession } from '../../state/transitions.js';
-import { clock, clockOf, compactMinutes, decimal, h, icon, longDate, plural, shortDate } from '../dom.js';
+import {
+  LAST_SLOT_HOUR,
+  areaName,
+  entryTitle,
+  firstSessionOfNextDay,
+  isClosingTime,
+  isFirstRun,
+  latestLog,
+  nearestDeadlines,
+  sessionsToGo,
+  slotRows,
+  summariseDay,
+  taskTitle,
+  unplannedRows,
+  weekShownOn,
+} from '../../state/day.js';
+import { editSlot, ensureWeek, noteLog, setTaskFinished, startSession } from '../../state/transitions.js';
+import { clock, clockOf, compactMinutes, decimal, duration, h, icon, longDate, plural, shortDate, weekday } from '../dom.js';
+import { openUnplannedDialog } from '../unplanned-dialog.js';
 
 const LUNCH_HOUR = 12;
 const DEADLINES_SHOWN = 3;
 const SOON_DAYS = 7;
+
+// Interface memory for this page load only. Losing it on reload at worst
+// shows a panel again, which is harmless, so it does not belong in the
+// saved state.
+/** Logs whose completion panel was saved. */
+const acknowledged = new Set();
+/** Dates closed with "Done for today". */
+const closedDays = new Set();
+/** Dates whose close panel was opened before closing time. */
+const closeOpened = new Set();
 
 /**
  * @param {ViewContext} context
@@ -51,7 +77,7 @@ function weekend(context, today) {
   const monday = weekShownOn(today);
   const first = slotRows(state, monday).find((row) => row.session !== null);
   return h('div', {},
-    pageHead(longDate(today), 'No library day. Monday\'s plan is ready when you are.'),
+    pageHead(longDate(today), 'No library day. Monday\'s plan is ready when you are.', unplannedButton(context)),
     h('div', { class: 'state-panel' },
       h('h2', {}, longDate(monday)),
       h('p', {}, first ? startsWith(state, first) : 'Nothing is planned yet.'),
@@ -82,16 +108,32 @@ function startsWith(state, row) {
  */
 function libraryDay(context, today) {
   const { state, now } = context;
+  const focusing = state.timer.phase === 'focus';
   const rows = slotRows(state, today);
-  const logged = logsOn(state.logs, today).length;
+  const summary = summariseDay(state, today);
+  const closing = !focusing && !closedDays.has(today) && (isClosingTime(now, state.settings.focusMinutes) || closeOpened.has(today));
+
+  // The completion panel belongs to the session that has just ended, until
+  // it is saved or the next session starts.
+  const latest = latestLog(state.logs, today);
+  const panelLog = latest && !focusing && latest.note === '' && !acknowledged.has(latest.id) ? latest : null;
+
+  const subtitle = closing
+    ? `${plural(summary.logged, 'session')} logged, ${duration(summary.focusMinutes)} of focus.`
+    : `${plural(summary.logged, 'session')} logged, ${sessionsToGo(rows)} to go.${dayMarker(state, now)}`;
+  /** @param {SlotRow} row */
+  const item = (row) => slotItem(context, row, panelLog?.slotKey === row.key ? panelLog : null, today);
+
   return h('div', {},
-    pageHead(longDate(today), `${plural(logged, 'session')} logged, ${sessionsToGo(rows)} to go.${dayMarker(state, now)}`),
+    pageHead(longDate(today), subtitle, unplannedButton(context)),
+    closing && closePanel(context, today, summary),
     h('div', { class: 'today' },
       h('ol', { class: 'timeline', 'aria-label': 'Today\'s sessions' },
-        rows.filter((row) => row.hour < LUNCH_HOUR).map((row) => slotItem(context, row)),
+        rows.filter((row) => row.hour < LUNCH_HOUR).map(item),
         h('li', { class: 'lunch' }, h('time', {}, clock(LUNCH_HOUR)), h('span', {}, 'Lunch, away from the desk')),
-        rows.filter((row) => row.hour > LUNCH_HOUR).map((row) => slotItem(context, row)),
-        h('li', { class: 'close-row' }, h('time', {}, clock(16, state.settings.focusMinutes)), h('span', {}, 'Close the day'))),
+        rows.filter((row) => row.hour > LUNCH_HOUR).map(item),
+        unplannedRows(state, today).map((row) => unplannedItem(context, row, panelLog && row.log?.id === panelLog.id ? panelLog : null, today)),
+        closeRow(context, today, closing)),
       aside(context, today)));
 }
 
@@ -112,30 +154,78 @@ function dayMarker(state, now) {
 /**
  * @param {ViewContext} context
  * @param {SlotRow} row
+ * @param {SessionLog | null} panelLog
+ * @param {LocalDate} today
  */
-function slotItem(context, row) {
+function slotItem(context, row, panelLog, today) {
   const { state } = context;
   const { entry, status } = row;
-  const classes = ['slot'];
-  if (status.status === 'logged' && status.completed) classes.push('done');
-  if (status.status === 'live') classes.push('active');
-  if (entry.kind === 'fixed') classes.push('fixed');
   const areaId = entry.kind === 'review' ? null : entry.areaId;
+  const classes = ['slot', ...statusClasses(status)];
+  if (entry.kind === 'fixed') classes.push('fixed');
 
-  return h('li', {
-    class: classes.join(' '),
-    'data-area': areaId,
-    'data-live-progress': status.status === 'live',
-    style: status.status === 'live' ? '--progress: 0%' : null,
-  },
-  h('time', {}, clock(row.hour)),
-  h('div', {},
-    h('div', { class: 'slot-area' },
-      areaId && h('span', { class: 'swatch' }),
-      areaId ? areaName(state, areaId) : entry.kind === 'review' ? 'Weekly review' : null,
-      entry.kind === 'fixed' && h('span', { class: 'fixed-tag' }, 'Fixed')),
-    slotTask(context, row)),
-  slotMeta(context, row));
+  return h('li', { class: classes.join(' '), 'data-area': areaId, ...liveAttributes(status) },
+    h('time', {}, clock(row.hour)),
+    h('div', {},
+      h('div', { class: 'slot-area' },
+        areaId && h('span', { class: 'swatch' }),
+        areaId ? areaName(state, areaId) : entry.kind === 'review' ? 'Weekly review' : null,
+        entry.kind === 'fixed' && h('span', { class: 'fixed-tag' }, 'Fixed')),
+      slotTask(context, row)),
+    slotMeta(context, row),
+    panelLog && completePanel(context, panelLog, today));
+}
+
+/**
+ * @param {ViewContext} context
+ * @param {UnplannedRow} row
+ * @param {SessionLog | null} panelLog
+ * @param {LocalDate} today
+ */
+function unplannedItem(context, row, panelLog, today) {
+  const { state } = context;
+  const title = taskTitle(state, row.taskId);
+  return h('li', { class: ['slot', ...statusClasses(row.status)].join(' '), 'data-area': row.areaId, ...liveAttributes(row.status) },
+    h('time', {}, clockOf(new Date(row.startedAt))),
+    h('div', {},
+      h('div', { class: 'slot-area' }, h('span', { class: 'swatch' }), `${areaName(state, row.areaId)}, unplanned`),
+      h('div', { class: title === null ? 'slot-task none' : 'slot-task' }, title ?? 'No task')),
+    h('div', { class: 'slot-meta' }, statusMeta(row.status)),
+    panelLog && completePanel(context, panelLog, today));
+}
+
+/**
+ * @param {SlotStatus} status
+ * @returns {string[]}
+ */
+function statusClasses(status) {
+  if (status.status === 'live') return ['active'];
+  return status.status === 'logged' && status.completed ? ['done'] : [];
+}
+
+/**
+ * The shell's tick fills a live row by updating --progress.
+ * @param {SlotStatus} status
+ */
+function liveAttributes(status) {
+  return status.status === 'live' ? { 'data-live-progress': true, style: '--progress: 0%' } : {};
+}
+
+/**
+ * @param {SlotStatus} status
+ * @returns {Node[]}
+ */
+function statusMeta(status) {
+  switch (status.status) {
+    case 'live':
+      return [h('span', { class: 'countdown', 'data-live-countdown': true })];
+    case 'logged':
+      return status.completed
+        ? [icon('i-check', 'check'), h('span', { class: 'mono' }, compactMinutes(status.minutes))]
+        : [h('span', { class: 'mono muted' }, `${compactMinutes(status.minutes)}, stopped`)];
+    case 'open':
+      return [];
+  }
 }
 
 /**
@@ -158,25 +248,104 @@ function slotTask(context, row) {
 function slotMeta(context, row) {
   const { state } = context;
   const { status, session } = row;
-  const canStart = session !== null && state.timer.phase !== 'focus';
-  const start = canStart && button('Start', () => context.apply(startSession, session, context.clock()), 'btn small reveal', `start-${row.key}`);
+  // A slot stopped early can be started again; its logs add up.
+  const start = session !== null && state.timer.phase !== 'focus' && !(status.status === 'logged' && status.completed)
+    && button('Start', () => context.apply(startSession, session, context.clock()), 'btn small reveal', `start-${row.key}`);
 
-  switch (status.status) {
-    case 'live':
-      return h('div', { class: 'slot-meta' }, h('span', { class: 'countdown', 'data-live-countdown': true }));
-    case 'logged':
-      return status.completed
-        ? h('div', { class: 'slot-meta' }, icon('i-check', 'check'), h('span', { class: 'mono' }, compactMinutes(status.minutes)))
-        : h('div', { class: 'slot-meta' }, h('span', { class: 'mono muted' }, `${compactMinutes(status.minutes)}, stopped`), start);
-    case 'open':
-      if (row.key === REVIEW_SLOT_KEY) {
-        return h('div', { class: 'slot-meta' }, context.hasView('review') && button('Open review', () => context.navigate('review'), 'btn small reveal'));
-      }
-      if (row.entry.kind === 'fixed') {
-        return h('div', { class: 'slot-meta faint' }, session ? 'Counts as 1 session' : 'Not counted', start);
-      }
-      return h('div', { class: 'slot-meta' }, start);
+  if (status.status !== 'open') return h('div', { class: 'slot-meta' }, statusMeta(status), status.status === 'logged' && start);
+  if (row.key === REVIEW_SLOT_KEY) {
+    return h('div', { class: 'slot-meta' }, context.hasView('review') && button('Open review', () => context.navigate('review'), 'btn small reveal'));
   }
+  if (row.entry.kind === 'fixed') return h('div', { class: 'slot-meta faint' }, session ? 'Counts as 1 session' : 'Not counted', start);
+  return h('div', { class: 'slot-meta' }, start);
+}
+
+/**
+ * Note and finish for the session that has just ended.
+ * @param {ViewContext} context
+ * @param {SessionLog} log
+ * @param {LocalDate} today
+ */
+function completePanel(context, log, today) {
+  const task = context.state.tasks.find((item) => item.id === log.taskId);
+  const note = h('input', { class: 'field', placeholder: 'Note for this session, optional', 'aria-label': 'Session note', maxlength: 2000 });
+  const finished = task && task.finishedOn === null ? h('input', { type: 'checkbox' }) : null;
+
+  /** @param {SubmitEvent} event */
+  function save(event) {
+    event.preventDefault();
+    acknowledged.add(log.id);
+    const finishedTaskId = finished?.checked && task ? task.id : null;
+    context.apply((state) => {
+      const noted = noteLog(state, log.id, note.value);
+      return finishedTaskId === null ? noted : setTaskFinished(noted, finishedTaskId, today);
+    });
+  }
+
+  return h('form', { class: 'complete-panel', onsubmit: save },
+    h('div', { class: 'row' },
+      note,
+      finished && h('label', { class: 'inline-check' }, finished, 'Task finished'),
+      h('button', { class: 'btn small primary', type: 'submit' }, 'Save')));
+}
+
+/**
+ * @param {ViewContext} context
+ * @param {LocalDate} today
+ * @param {DaySummary} summary
+ */
+function closePanel(context, today, summary) {
+  const { state } = context;
+  const { date, row } = firstSessionOfNextDay(state, today);
+  const session = row?.session ?? null;
+  const whose = daysBetween(today, date) === 1 ? 'tomorrow\'s' : `${weekday(date)}'s`;
+
+  const choice = session && h('select', { class: 'field', 'aria-label': `First task for ${weekday(date)}` },
+    h('option', { value: '' }, 'No specific task'),
+    state.tasks
+      .filter((task) => task.areaId === session.areaId && (task.finishedOn === null || task.id === session.taskId))
+      .map((task) => h('option', { value: task.id, selected: task.id === session.taskId }, task.title)));
+
+  function done() {
+    const taskId = choice?.value || null;
+    if (row && session && taskId !== session.taskId) {
+      context.apply(editSlot, mondayOf(date), row.key, { kind: 'session', areaId: session.areaId, taskId });
+    }
+    closedDays.add(today);
+    context.refresh();
+  }
+
+  return h('div', { class: 'state-panel' },
+    h('h2', {}, 'Close the day'),
+    h('p', {}, row
+      ? `Pick ${whose} first task now, so ${clock(row.hour)} starts with work instead of a decision.`
+      : `${weekday(date)} has no sessions planned, so there is nothing to pick.`),
+    h('div', { class: 'summary-line' },
+      fact(`${summary.logged} / ${summary.planned}`, 'Sessions'),
+      fact(String(summary.stopped), 'Stopped early'),
+      fact(String(summary.finished), 'Tasks finished')),
+    h('div', { class: 'row' },
+      row && session && h('span', { class: 'muted' }, `${weekday(date)} ${clock(row.hour)}, ${areaName(state, session.areaId)}`),
+      choice,
+      button('Done for today', done, 'btn primary', 'close-done')));
+}
+
+/**
+ * @param {ViewContext} context
+ * @param {LocalDate} today
+ * @param {boolean} closing
+ */
+function closeRow(context, today, closing) {
+  const { state } = context;
+  const closed = closedDays.has(today);
+  const canOpen = !closing && !closed && state.timer.phase !== 'focus';
+  return h('li', { class: 'close-row' },
+    h('time', {}, clock(LAST_SLOT_HOUR, state.settings.focusMinutes)),
+    h('span', {}, closed ? 'Day closed' : 'Close the day'),
+    canOpen && button('Close early', () => {
+      closeOpened.add(today);
+      context.refresh();
+    }, 'btn small quiet'));
 }
 
 /**
@@ -214,12 +383,29 @@ function aside(context, today) {
           h('span', { class: 'track' }, h('span', { style: `width: ${row.planned === 0 ? 0 : Math.min(100, (row.logged / row.planned) * 100).toFixed(0)}%` })))))));
 }
 
+/** @param {ViewContext} context */
+function unplannedButton(context) {
+  if (context.state.timer.phase === 'focus') return null;
+  return button('Unplanned session', () => openUnplannedDialog({ state: context.state, apply: context.apply, clock: context.clock }), 'btn', 'unplanned');
+}
+
 /**
  * @param {string} title
  * @param {string} subtitle
+ * @param {Node | null} [action]
  */
-function pageHead(title, subtitle) {
-  return h('header', { class: 'page-head' }, h('div', {}, h('h1', {}, title), h('p', {}, subtitle)));
+function pageHead(title, subtitle, action = null) {
+  return h('header', { class: 'page-head' },
+    h('div', {}, h('h1', {}, title), h('p', {}, subtitle)),
+    action && h('div', { class: 'head-actions' }, action));
+}
+
+/**
+ * @param {string} value
+ * @param {string} label
+ */
+function fact(value, label) {
+  return h('div', {}, h('span', { class: 'mono' }, value), h('span', { class: 'muted' }, label));
 }
 
 /**

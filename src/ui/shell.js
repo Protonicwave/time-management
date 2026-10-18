@@ -10,6 +10,7 @@ import { describeDock, entryTitle, isFirstRun, weekShownOn } from '../state/day.
 import { advanceTimer, ensureWeek, markExported, startSession, stopSession } from '../state/transitions.js';
 import { backupFileName, downloadText, serialise } from '../storage/backup-file.js';
 import { clock, countdown, dayMonth, h, weekday } from './dom.js';
+import { openUnplannedDialog } from './unplanned-dialog.js';
 
 /** @typedef {'today' | 'week' | 'tasks' | 'deadlines' | 'review' | 'settings'} ViewId */
 
@@ -25,6 +26,7 @@ const VIEW_ORDER = ['today', 'week', 'tasks', 'deadlines', 'review', 'settings']
  * @property {() => string} newId
  * @property {(id: ViewId) => void} navigate
  * @property {(id: ViewId) => boolean} hasView
+ * @property {() => void} refresh redraws the view after a change held only in the view
  * @property {() => void} exportBackup
  * @property {Mirror} mirror
  */
@@ -101,7 +103,7 @@ export function mountShell(root, { store, views, clock: now, newId, mirror }) {
   function renderMain(time) {
     const view = currentView();
     /** @type {ViewContext} */
-    const context = { state: store.state, now: time, clock: now, apply, newId, navigate, hasView, exportBackup, mirror };
+    const context = { state: store.state, now: time, clock: now, apply, newId, navigate, hasView, refresh: () => render(true), exportBackup, mirror };
     return h('main', { class: 'main' },
       notices(),
       h('section', { class: 'view', 'aria-label': view.label }, view.render(context)));
@@ -177,7 +179,7 @@ export function mountShell(root, { store, views, clock: now, newId, mirror }) {
       case 'next-today':
         return { label: model.early ? 'Start early' : 'Start', run: () => apply(startSession, model.session, now()), space: true };
       case 'next-day':
-        return null;
+        return { label: 'Unplanned', run: () => openUnplannedDialog({ state: store.state, apply, clock: now }), space: false };
     }
   }
 
