@@ -210,7 +210,7 @@ function validateSlots(value, path) {
  * @param {string} path
  * @returns {SlotEntry}
  */
-function validateSlotEntry(value, path) {
+export function validateSlotEntry(value, path) {
   const input = object(value, path);
   const kind = oneOf(input.kind, `${path}.kind`, /** @type {const} */ (['session', 'fixed', 'review']));
   switch (kind) {
@@ -228,7 +228,7 @@ function validateSlotEntry(value, path) {
  * @param {string} path
  * @returns {Task}
  */
-function validateTask(value, path) {
+export function validateTask(value, path) {
   const input = object(value, path);
   return {
     id: id(input.id, `${path}.id`),
@@ -264,7 +264,7 @@ function validateLog(value, path) {
  * @param {string} path
  * @returns {Deadline}
  */
-function validateDeadline(value, path) {
+export function validateDeadline(value, path) {
   const input = object(value, path);
   return {
     id: id(input.id, `${path}.id`),
