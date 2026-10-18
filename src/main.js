@@ -3,6 +3,7 @@
 import { NewerSchemaError, SchemaError, defaultState, parseStateJson } from './domain/schema.js';
 import { createMirror } from './storage/backup-file.js';
 import { STATE_KEY, loadState, saveState } from './storage/local-store.js';
+import { mountRecovery } from './ui/recovery.js';
 import { mountShell } from './ui/shell.js';
 import { createStore } from './ui/store.js';
 import { renderSettings } from './ui/views/settings.js';
@@ -16,7 +17,15 @@ const root = document.getElementById('app');
 if (!root) throw new Error('index.html is missing the #app element');
 
 const loaded = loadState(localStorage, clock());
-start(root, loaded.kind === 'loaded' ? loaded.state : defaultState());
+if (loaded.kind === 'quarantined') {
+  mountRecovery(root, loaded, clock, (state) => {
+    // Saved straight away, or a reload would land on the recovery screen again.
+    saveState(localStorage, state);
+    start(root, state);
+  });
+} else {
+  start(root, loaded.kind === 'loaded' ? loaded.state : defaultState());
+}
 
 /**
  * @param {HTMLElement} root
