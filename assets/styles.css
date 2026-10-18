@@ -16,7 +16,8 @@
   --line-strong: oklch(84% 0.006 250);
   --text: oklch(22% 0.012 250);
   --text-muted: oklch(47% 0.012 250);
-  --text-faint: oklch(60% 0.01 250);
+  --text-faint: oklch(53% 0.01 250);
+  --field-line: oklch(64% 0.006 250);
   --ink: oklch(24% 0.012 250);
   --ink-text: oklch(98% 0.002 250);
   --live: oklch(66% 0.15 58);
@@ -55,7 +56,8 @@
     --line-strong: oklch(36% 0.01 250);
     --text: oklch(93% 0.005 250);
     --text-muted: oklch(72% 0.01 250);
-    --text-faint: oklch(60% 0.01 250);
+    --text-faint: oklch(65% 0.01 250);
+    --field-line: oklch(52% 0.01 250);
     --ink: oklch(93% 0.005 250);
     --ink-text: oklch(18% 0.006 250);
     --live: oklch(74% 0.14 62);
@@ -88,7 +90,8 @@
   --line-strong: oklch(36% 0.01 250);
   --text: oklch(93% 0.005 250);
   --text-muted: oklch(72% 0.01 250);
-  --text-faint: oklch(60% 0.01 250);
+  --text-faint: oklch(65% 0.01 250);
+  --field-line: oklch(52% 0.01 250);
   --ink: oklch(93% 0.005 250);
   --ink-text: oklch(18% 0.006 250);
   --live: oklch(74% 0.14 62);
@@ -167,7 +170,7 @@ h1[tabindex="-1"]:focus { outline: none; }
 .btn .icon { width: 16px; height: 16px; }
 .field {
   height: 32px; padding: 0 var(--s3);
-  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  border: 1px solid var(--field-line); border-radius: var(--r-sm);
   background: var(--surface-raised); min-width: 0;
 }
 .field:hover { border-color: var(--text-faint); }
