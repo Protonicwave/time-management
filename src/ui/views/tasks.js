@@ -24,13 +24,15 @@ export function renderTasks(context) {
   const { state } = context;
   const today = localDateOf(context.now);
   const groups = taskGroups(state, today);
+  // One column header serves every group below it.
+  const headed = groups.findIndex((group) => shownRows(group).length > 0);
 
   return h('div', {},
     h('header', { class: 'page-head' },
       h('div', {}, h('h1', {}, 'Tasks'), h('p', {}, `Estimates are in sessions of ${state.settings.focusMinutes} minutes.`)),
       h('div', { class: 'head-actions' }, h('span', { class: 'faint' }, 'Add task'), h('kbd', {}, 'N'))),
     learningLine(context),
-    groups.map((group, index) => taskGroup(context, group, today, index === 0)));
+    groups.map((group, index) => taskGroup(context, group, today, index === 0, index === headed)));
 }
 
 /** @param {ViewContext} context */
@@ -51,11 +53,11 @@ function learningLine(context) {
  * @param {TaskGroup} group
  * @param {LocalDate} today
  * @param {boolean} first takes the N shortcut
+ * @param {boolean} headed carries the column header
  */
-function taskGroup(context, group, today, first) {
+function taskGroup(context, group, today, first, headed) {
   const name = areaName(context.state, group.areaId);
-  const shownEarlier = unfolded.has(group.areaId) ? group.earlier : [];
-  const rows = [...group.open, ...group.recent, ...shownEarlier];
+  const rows = shownRows(group);
   const toggle = () => {
     if (unfolded.has(group.areaId)) unfolded.delete(group.areaId);
     else unfolded.add(group.areaId);
@@ -68,12 +70,20 @@ function taskGroup(context, group, today, first) {
       h('h2', {}, name),
       h('span', { class: 'muted' }, group.open.length === 0 ? 'No open tasks' : `${group.open.length} open`)),
     rows.length > 0 && h('ul', { class: 'tasks' },
-      h('li', { class: 'task head', 'aria-hidden': 'true' },
+      headed && h('li', { class: 'task head', 'aria-hidden': 'true' },
         h('span'), h('span', {}, 'Task'), h('span', { class: 'num' }, 'Estimate'), h('span', { class: 'num' }, 'Logged'), h('span', { class: 'num' }, 'Likely left')),
       rows.map((row) => taskItem(context, row, today))),
     addRow(context, group, name, first, rows.length === 0),
     group.earlier.length > 0 && h('button', { class: 'show-more', type: 'button', 'data-focus-key': `fold-${group.areaId}`, onclick: toggle },
       unfolded.has(group.areaId) ? 'Hide earlier finished tasks' : `Show ${group.earlier.length} finished`));
+}
+
+/**
+ * @param {TaskGroup} group
+ * @returns {TaskRow[]}
+ */
+function shownRows(group) {
+  return [...group.open, ...group.recent, ...(unfolded.has(group.areaId) ? group.earlier : [])];
 }
 
 /**
