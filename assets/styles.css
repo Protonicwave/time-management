@@ -358,13 +358,15 @@ kbd {
 .task .num.over { color: var(--danger-text); }
 .task.head { min-height: 32px; font-size: 12px; color: var(--text-faint); }
 .task.head .num { font-family: var(--font-sans); font-size: 12px; color: var(--text-faint); }
-.task .title { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); min-width: 0; overflow-wrap: anywhere; }
+/* A row action shares the title cell and wraps under the title rather than squeezing it. */
+.task .title, .dl .title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--s2); min-width: 0; overflow-wrap: anywhere; }
+.task .title > span, .dl .title > span { flex: 1 1 160px; min-width: 0; }
 .task .reveal { opacity: 0; transition: opacity 120ms var(--ease); }
 .task:hover .reveal, .task:focus-within .reveal { opacity: 1; }
 .task.finished .title > span { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--text-faint); }
 .add-row { display: grid; grid-template-columns: 20px minmax(0, 1fr) 72px auto; gap: var(--s3); align-items: center; padding: var(--s2) 0; }
 .add-row .plus { color: var(--text-faint); font-size: 16px; text-align: center; }
-.add-row .field { width: 100%; }
+.add-row .field { width: 100%; text-overflow: ellipsis; }
 .add-row .field:not(:focus) { border-color: transparent; background: transparent; padding-left: 0; }
 .add-row.first { border-top: 1px solid var(--line); }
 .add-row .error-detail { grid-column: 2 / -1; margin-top: 0; }
@@ -379,14 +381,13 @@ kbd {
 .dl-group { margin-bottom: var(--s6); }
 .dl-group h2 { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-bottom: var(--s2); }
 .dl { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-.dl li { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 80px auto; gap: var(--s4); align-items: center; min-height: 48px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.dl li { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 80px; gap: var(--s4); align-items: center; min-height: 48px; border-bottom: 1px solid var(--line); font-size: 14px; }
 .dl .date { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
 .dl .area { display: flex; align-items: center; gap: var(--s2); font-size: 13px; color: var(--text-muted); }
 .dl .left { font-family: var(--font-mono); font-size: 13px; text-align: right; color: var(--text-muted); }
 .dl .left.soon { color: var(--text); font-weight: 500; }
 .dl .left.past { color: var(--text-faint); }
 .dl li.past .title { color: var(--text-muted); }
-.dl .title { overflow-wrap: anywhere; }
 .dl .reveal { opacity: 0; transition: opacity 120ms var(--ease); }
 .dl li:hover .reveal, .dl li:focus-within .reveal { opacity: 1; }
 
@@ -499,12 +500,13 @@ dialog[open] { animation: rise 160ms var(--ease); }
   .add-row { grid-template-columns: 20px minmax(0, 1fr) 56px; }
   .add-row .btn { display: none; }
   .task .reveal { opacity: 1; }
-  .deadline-form { grid-template-columns: 1fr 1fr; }
-  .deadline-form .field:first-child { grid-column: 1 / -1; }
-  .dl li { grid-template-columns: 84px minmax(0, 1fr) 56px auto; gap: var(--s3); }
+  .deadline-form { grid-template-columns: minmax(0, 1fr) auto; }
+  .deadline-form .field:first-child, .deadline-form select { grid-column: 1 / -1; }
+  .deadline-form select { grid-row: 2; }
+  .dl li { grid-template-columns: 84px minmax(0, 1fr) 56px; gap: var(--s3); }
   .dl .reveal { opacity: 1; }
   .dl .area { display: none; }
-  .rtable .barcell { display: none; }
+  .rtable .barcell, .legend { display: none; }
   .two-col { grid-template-columns: minmax(0, 1fr); gap: var(--s6); }
   .setting { grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
 }

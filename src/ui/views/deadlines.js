@@ -73,9 +73,10 @@ function group(context, heading, items) {
       };
       return h('li', { class: past ? 'past' : null },
         h('span', { class: 'date' }, shortDate(deadline.date)),
-        h('span', { class: 'title' }, deadline.title),
+        h('span', { class: 'title' },
+          h('span', {}, deadline.title),
+          h('button', { class: 'btn small quiet reveal', type: 'button', 'aria-label': `Delete ${deadline.title}`, onclick: remove }, 'Delete')),
         h('span', { class: 'area', 'data-area': deadline.areaId }, h('span', { class: 'swatch' }), areaName(state, deadline.areaId)),
-        h('span', { class: past ? 'left past' : isSoon(days) ? 'left soon' : 'left' }, daysAway(days)),
-        h('button', { class: 'btn small quiet reveal', type: 'button', 'aria-label': `Delete ${deadline.title}`, onclick: remove }, 'Delete'));
+        h('span', { class: past ? 'left past' : isSoon(days) ? 'left soon' : 'left' }, daysAway(days)));
     })));
 }
