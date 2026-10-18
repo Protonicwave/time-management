@@ -257,7 +257,11 @@ function slotMeta(context, row) {
   if (row.key === REVIEW_SLOT_KEY) {
     return h('div', { class: 'slot-meta' }, context.hasView('review') && button('Open review', () => context.navigate('review'), 'btn small reveal'));
   }
-  if (row.entry.kind === 'fixed' && !session) return h('div', { class: 'slot-meta faint' }, 'Not counted');
+  if (row.entry.kind === 'fixed') {
+    return session
+      ? h('div', { class: 'slot-meta' }, h('span', { class: 'faint' }, 'Counts as 1 session'), start)
+      : h('div', { class: 'slot-meta faint' }, 'Not counted');
+  }
   return h('div', { class: 'slot-meta' }, start);
 }
 
