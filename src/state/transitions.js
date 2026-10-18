@@ -241,6 +241,15 @@ export function updateSettings(state, changes) {
 
 /**
  * @param {AppState} state
+ * @param {LocalDate} date
+ * @returns {AppState}
+ */
+export function markExported(state, date) {
+  return { ...state, lastExportOn: date };
+}
+
+/**
+ * @param {AppState} state
  * @param {FinishedFocus | null} finished
  * @param {string} id
  * @returns {AppState}

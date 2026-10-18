@@ -11,6 +11,7 @@ import {
   editSlot,
   editTask,
   ensureWeek,
+  markExported,
   noteLog,
   regenerateWeek,
   setTaskFinished,
@@ -193,6 +194,12 @@ describe('settings', () => {
     assert.throws(() => updateSettings(defaultState(), { breakMinutes: 61 }), {
       message: 'settings.breakMinutes: expected integer from 0 to 60, got 61',
     });
+  });
+});
+
+describe('backups', () => {
+  test('records the date of the last export', () => {
+    assert.equal(markExported(defaultState(), '2026-10-23').lastExportOn, '2026-10-23');
   });
 });
 
