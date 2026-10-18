@@ -80,6 +80,24 @@ export function parseState(raw) {
 }
 
 /**
+ * parseState for text as it comes out of storage or a backup file.
+ *
+ * @param {string} text
+ * @returns {AppState}
+ */
+export function parseStateJson(text) {
+  /** @type {unknown} */
+  let raw;
+  try {
+    raw = JSON.parse(text);
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new SchemaError('state', 'JSON text', text);
+    throw error;
+  }
+  return parseState(raw);
+}
+
+/**
  * @param {unknown} value
  * @param {string} [path]
  * @returns {Settings}

@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateWeek } from '../src/domain/allocation.js';
-import { NewerSchemaError, SchemaError, defaultState, parseState, validateSettings } from '../src/domain/schema.js';
+import { NewerSchemaError, SchemaError, defaultState, parseState, parseStateJson, validateSettings } from '../src/domain/schema.js';
 
 /** @import { AppState } from '../src/domain/types.js' */
 
@@ -131,6 +131,19 @@ describe('migration', () => {
     assert.throws(() => parseState(raw), (error) =>
       error instanceof NewerSchemaError
       && error.message === 'saved data is schema version 2; this version of Logbook reads up to 1');
+  });
+});
+
+describe('parseStateJson', () => {
+  test('reads state written by JSON.stringify', () => {
+    assert.deepEqual(parseStateJson(JSON.stringify(fullState())), fullState());
+  });
+
+  test('rejects text that is not JSON as a schema error', () => {
+    assert.throws(() => parseStateJson('{"schemaVersion": 1,'), {
+      name: 'SchemaError',
+      message: 'state: expected JSON text, got "{\\"schemaVersion\\": 1,"',
+    });
   });
 });
 
