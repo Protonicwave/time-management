@@ -505,6 +505,8 @@ dialog[open] { animation: rise 160ms var(--ease); }
   .add-row { grid-template-columns: 20px minmax(0, 1fr) 56px; }
   .add-row .btn { display: none; }
   .task .reveal { opacity: 1; }
+  /* Wrapped under the title, the action lines up with the title text instead of its own padding. */
+  .task .title .reveal, .dl .title .reveal { margin-left: calc(var(--s3) * -1); height: 24px; }
   .deadline-form { grid-template-columns: minmax(0, 1fr) auto; }
   .deadline-form .field:first-child, .deadline-form select { grid-column: 1 / -1; }
   .deadline-form select { grid-row: 2; }
